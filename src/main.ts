@@ -1,24 +1,37 @@
 import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import { connectToParent } from "penpal";
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+// Connect to the parent iframe
+const connection = connectToParent<ParentApi>({
+  methods: {},
+});
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+// Expose a function to send an example event to the parent iframe
+window.sendExampleEvent = () => {
+  connection.promise.then(parent => {
+    parent.behaviorEvent({ interaction_type: 'example_click'});
+  });
+}
+
+// The API that the parent window exposes
+type ParentApi = {
+  behaviorEvent: (event: BehaviorEvent) => void;
+};
+
+// Schema of behavior event payloads
+type BehaviorEvent = {
+  interaction_type?: string | null;
+  funnel_stage?: string | null;
+  module_location?: string | null;
+  module_name?: string | null;
+  event_value?: string | null;
+  event_location?: string | null;
+  click_url?: string | null;
+};
+
+// Make typescript chill about adding the exposed method
+declare global {
+  interface Window {
+    sendExampleEvent: () => void;
+  }
+}
